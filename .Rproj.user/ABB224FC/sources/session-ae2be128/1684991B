@@ -1,0 +1,31 @@
+{
+    "id": "1684991B",
+    "path": "~/Downloads/Quarto_Website__495_Directory/blog/project1/index.qmd",
+    "project_path": "blog/project1/index.qmd",
+    "type": "quarto_markdown",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1745460373854.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "rmdVisualMode": "false",
+        "rmdVisualWrapConfigured": "true",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "4,0",
+        "scrollLine": "0",
+        "docOutlineVisible": "1",
+        "rmdVisualCollapsedChunks": "",
+        "rmdVisualModeLocation": "1:0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1745460452,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1745460452111,
+    "read_only": false,
+    "read_only_alternatives": []
+}
