@@ -10,10 +10,4 @@ about:
       href: https://www.linkedin.com/in/lyuhang/
 ---
 
-This is a Quarto website.
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
-
-```{r}
-1 + 1
-```

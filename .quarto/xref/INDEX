@@ -13,5 +13,17 @@
   },
   "blog.qmd": {
     "blog.html": "4aa46df6"
+  },
+  "render_template.Rmd": {
+    "render_template.html": "579bacf5"
+  },
+  "blog/project3/index.qmd": {
+    "index.html": "ce33c27a"
+  },
+  "hw1_questions.qmd": {
+    "hw1_questions.html": "a3b75b18"
+  },
+  "blog/project3/hw1_questions.qmd": {
+    "hw1_questions.html": "749cb512"
   }
 }
