@@ -1,0 +1,374 @@
+---
+title: "Machine Learning"
+author: "Hang Lyu"
+date: 6/11/2025
+---
+
+This research paper investigates two fundamental machine learning approaches: the K-means algorithm, an unsupervised learning method used for clustering data points into groups, and K-Nearest Neighbors (KNN), a classic supervised learning algorithm applied to both classification and regression tasks.
+
+## 1a. K-Means
+
+The first research topic is K-means algorithm, which is an unsupervised machine learning algorithm that used for clustering data points into groups based on the similarity. It aims to partition a dataset into K distinct clusters, which each data point belongs to the cluster with the nearest mean (cluster centroid).
+
+```{python}
+import pandas as pd
+
+file_path = 'palmer_penguins.csv'
+penguins_df = pd.read_csv(file_path)
+
+penguins_df.head()
+```
+
+```{python}
+penguins_df.columns
+```
+
+```{python}
+penguins_df.isnull().values.any()
+```
+
+The Palmer Penguins dataset is used for this K-means clustering task. It contains various measurements of penguins living on the Palmer Archipelago in Antarctica. And there are no missing values in the whole dataset.
+
+Here's the information in this Palmer Penguins dataset:
+
+-   species - species of penguin (Adelie, Gentoo, Chinstrap)
+
+-   island - island where the penguin was found (Torgersen, Biscoe, Dream)
+
+-   bill_length_mm - length of the culmen in millimeters, as the culmen is the dorsal ridge atop the bill.
+
+-   bill_depth_mm - depth of the culmen in millimeters, as the culmen is the dorsal ridge atop the bill.
+
+-   flipper_length_mm - length of the flipper in millimeters
+
+-   body_mass_g - body mass in grams
+
+-   sex - sex of the penguin (male/female)
+
+-   year - the year the data was collected for penguins observations.
+
+Next，we'll proceed to normalize the data.
+
+```{python}
+import matplotlib.pyplot as plt
+
+features = penguins_df[['bill_length_mm', 'flipper_length_mm']]
+
+plt.figure(figsize=(8, 6))
+plt.scatter(features['bill_length_mm'], features['flipper_length_mm'], c='blue', alpha=0.6)
+plt.xlabel('Bill Length (mm)')
+plt.ylabel('Flipper Length (mm)')
+plt.title('Original Penguin Data (Bill Length vs Flipper Length)')
+plt.grid(True)
+plt.show()
+
+X = features.values  
+```
+
+```{python}
+print("First five rows of input features:\n", X[:5])
+```
+
+Here, we've plotted the original penguin data using bill length and flipper length, and ensuring that the data is now ready in numerical format.
+
+Continue, we'll proceed to implement the customized K-means algorithm and show clustering process across iterations by step-by-step plots. We'll choose K=3 as an example, representing the 3 species of penguins (Adelie, Gentoo, Chinstrap) in the dataset.
+
+```{python}
+import numpy as np
+
+def initialize_centroids(X, k):
+    "Randomly initialize k centroids from the dataset"
+    indices = np.random.choice(X.shape[0], k, replace=False)
+    return X[indices]
+
+def assign_clusters(X, centroids):
+    "Assign each point to the nearest centroid"
+    distances = np.linalg.norm(X[:, np.newaxis] - centroids, axis=2)
+    return np.argmin(distances, axis=1)
+
+def update_centroids(X, labels, k):
+    "Compute new centroids as the mean of assigned points"
+    new_centroids = np.array([X[labels == i].mean(axis=0) for i in range(k)])
+    return new_centroids
+
+def has_converged(old_centroids, new_centroids, tol=1e-4):
+    "Check if centroids have stopped changing"
+    return np.all(np.linalg.norm(old_centroids - new_centroids, axis=1) < tol)
+
+def plot_clusters(X, labels, centroids, iteration):
+    "Visualize clusters and centroids"
+    plt.figure(figsize=(8, 6))
+    for i in range(len(centroids)):
+        plt.scatter(X[labels == i, 0], X[labels == i, 1], label=f'Cluster {i+1}')
+    plt.scatter(centroids[:, 0], centroids[:, 1], c='black', marker='x', s=100, label='Centroids')
+    plt.title(f'Iteration {iteration}')
+    plt.xlabel('Bill Length (mm)')
+    plt.ylabel('Flipper Length (mm)')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+k = 3
+max_iter = 10
+centroids = initialize_centroids(X, k)
+
+for i in range(max_iter):
+    labels = assign_clusters(X, centroids)
+    plot_clusters(X, labels, centroids, i + 1)
+    new_centroids = update_centroids(X, labels, k)
+    
+    if has_converged(centroids, new_centroids):
+        print(f'Converged after {i+1} iterations')
+        break
+    centroids = new_centroids.copy()
+```
+
+We can see that the custom K-means implementation successfully converged after 6 iterations with K=3, and found that the clusters were stabilized across different steps.
+
+Next, we'll compare the customized K-means implementation results with the built-in KMeans from Python to assess the cluster similarity.
+
+```{python}
+from sklearn.cluster import KMeans
+
+kmeans_model = KMeans(n_clusters=3, random_state=42)
+kmeans_labels = kmeans_model.fit_predict(X)
+kmeans_centroids = kmeans_model.cluster_centers_
+
+plt.figure(figsize=(8, 6))
+for i in range(3):
+    plt.scatter(X[kmeans_labels == i, 0], X[kmeans_labels == i, 1], label=f'Cluster {i+1}')
+plt.scatter(kmeans_centroids[:, 0], kmeans_centroids[:, 1], c='black', marker='x', s=100, label='Centroids')
+plt.title('Built-in KMeans Clustering Result')
+plt.xlabel('Bill Length (mm)')
+plt.ylabel('Flipper Length (mm)')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+Above is the clustering result using scikit-learn's built-in KMeans algorithm with K=3.
+
+Comparing customized K-means implementation results with the built-in KMeans from Python's scikit-learn, we found that :
+
+-   The customized K-means implementation performed similarly to the built-in KMeans version, with centroids and clusters converging visually to similar groupings.
+
+-   Both methods reflect three distinct clusters among penguins using bill length and flipper length.
+
+Continue, we'll calculate both the within-cluster-sum-of-squares and silhouette scores by scikit-learn's built-in KMeans algorithm and plot the results for various numbers of clusters (ie, K=2,3,...,7).
+
+```{python}
+from sklearn.metrics import silhouette_score
+X = penguins_df[['bill_length_mm', 'flipper_length_mm']]
+
+k_values = range(2, 8)
+wcss = []
+silhouette_scores = []
+
+for k in k_values:
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    labels = kmeans.fit_predict(X)
+    wcss.append(kmeans.inertia_)  
+    silhouette_scores.append(silhouette_score(X, labels))
+
+plt.figure(figsize=(15, 6))
+
+plt.subplot(1, 2, 1)
+plt.plot(k_values, wcss, marker='o')
+plt.title('Within-Cluster Sum of Squares vs K', fontsize=13)
+plt.xlabel('Number of Clusters (K)', fontsize=11)
+plt.ylabel('Within-Cluster Sum of Squares', fontsize=11)
+plt.grid(True)
+
+plt.subplot(1, 2, 2)
+plt.plot(k_values, silhouette_scores, marker='s')
+plt.title('Silhouette Scores vs K', fontsize=13)
+plt.xlabel('Number of Clusters (K)', fontsize=11)
+plt.ylabel('Silhouette Score', fontsize=11)
+plt.grid(True)
+
+plt.subplots_adjust(left=0.12, right=0.95, wspace=0.25)
+plt.show()
+```
+
+Regarding the Within-Cluster Sum of Squares graph, we discerned a noticeable "elbow" around the K=3, which means that the increasing the number of clusters beyond 3 leads to smaller improvements in reducing the within within-cluster sum of squares. Therefore, K=3 is the recommended number of clusters from the within-cluster-sum-of-squares.
+
+In terms of the Silhouette Score graph, it measures the level of separation and compact the clusters are - the higher the score, the better the overall clustering quality. This graph shows that the highest silhouette scores at K=2 and K=3, with K=3 being slightly lower than K=2 but still performs strong. Also, K=3 corresponds with the structure of the data (i.e. three distinct species of penguins.
+
+Considering both methods, K=3 is the most reasonable choice for the optimal number of clusters. This also aligns better with the overall structure of the data (i.e. three distrinct species of penguin (Adelie, Gentoo, Chinstrap)).
+
+## 2a. K Nearest Neighbors
+
+The second research topic is K Nearest Neighbors (KNN), which is a simple, intuitive supervised machine learning algorithm used for classification and regression. We will generate a synthetic dataset for the k-nearest neighbors algorithm.
+
+***A.***
+
+```{python}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+
+n = 100
+x1 = np.random.uniform(-3, 3, n)
+x2 = np.random.uniform(-3, 3, n)
+
+boundary = np.sin(4 * x1) + x1
+
+y = (x2 > boundary).astype(int)
+
+dat = pd.DataFrame({'x1': x1, 'x2': x2, 'y': y})
+
+dat.head()
+```
+
+This synthetic dataset for the k-nearest neighbors algorithm consists of:
+
+-   Two numerical features: x1 and x2, both uniformly sampled from -3 to 3.
+
+-   One binary outcome variable: y, determined by whether `x2` is above or below a wiggly boundary defined by a sin function: sin(4 \* x1) + x1
+
+***B.***
+
+```{python}
+plt.figure(figsize=(7, 6))
+scatter = plt.scatter(dat['x1'], dat['x2'], c=dat['y'], cmap='bwr', edgecolor='k', s=60)
+plt.xlabel('x1')
+plt.ylabel('x2')
+plt.title('Synthetic Data Colored by y')
+
+
+x1_sorted = np.linspace(-3, 3, 300)
+boundary_line = np.sin(4 * x1_sorted) + x1_sorted
+plt.plot(x1_sorted, boundary_line, 'k--', label='Wiggly Boundary')
+
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+Above is the plot of the synthetic dataset:
+
+-   The x-axis is x1, the y-axis is x2.
+
+-   Points are colored by the value of y:
+
+    -   Red for class 1 ( x2 \> sin(4 \* x1) + x1)
+
+    -   Blue for class 0
+
+-   The dashed black curve represents the wiggly boundary defined by x2 = sin(4 \* x1) + x1.
+
+***C.***
+
+```{python}
+
+np.random.seed(24)
+n_test = 100
+x1_test = np.random.uniform(-3, 3, n_test)
+x2_test = np.random.uniform(-3, 3, n_test)
+boundary_test = np.sin(4 * x1_test) + x1_test
+y_test = (x2_test > boundary_test).astype(int)
+
+
+test_df = pd.DataFrame({'x1': x1_test, 'x2': x2_test, 'y': y_test})
+
+
+plt.figure(figsize=(7, 6))
+plt.scatter(test_df['x1'], test_df['x2'], c=test_df['y'], cmap='bwr', edgecolor='k', s=60)
+plt.xlabel('x1')
+plt.ylabel('x2')
+plt.title('Test Dataset Colored by y')
+
+
+x1_sorted_test = np.linspace(-3, 3, 300)
+boundary_line_test = np.sin(4 * x1_sorted_test) + x1_sorted_test
+plt.plot(x1_sorted_test, boundary_line_test, 'k--', label='Wiggly Boundary')
+
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+Above is the plot of the test dataset:
+
+-   It contains 100 points generated using a different random seed (24), but follow the same logic as the training set.
+
+-   The color of each point reflects its class value of y, determined by whether it lies above or below the wiggly boundary (x2 \> sin (4 \* x1) + x1).
+
+-   The dashed black line again indicates the wiggly boundary.
+
+***D.***
+
+```{python}
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score
+from collections import Counter
+
+X_train = np.column_stack((x1, x2))
+y_train = y
+
+X_test = np.column_stack((x1_test, x2_test))
+y_test = y_test
+
+def knn_predict(X_train, y_train, X_test, k):
+    predictions = []
+    for test_point in X_test:
+        
+        distances = np.linalg.norm(X_train - test_point, axis=1)
+      
+        nearest_indices = np.argsort(distances)[:k]
+        
+        nearest_labels = y_train[nearest_indices]
+        majority_vote = Counter(nearest_labels).most_common(1)[0][0]
+        predictions.append(majority_vote)
+    return np.array(predictions)
+  
+
+k = 5
+y_pred_custom = knn_predict(X_train, y_train, X_test, k)
+custom_acc = accuracy_score(y_test, y_pred_custom)
+
+
+knn_model = KNeighborsClassifier(n_neighbors=k)
+knn_model.fit(X_train, y_train)
+y_pred_sklearn = knn_model.predict(X_test)
+sklearn_acc = accuracy_score(y_test, y_pred_sklearn)
+
+(custom_acc, sklearn_acc)
+```
+
+Here, we devise a custom KNN implementation and make a comparsion between its results and scikit-learn's `KNeighborsClassifier` in Python. We found that the both customized KNN implementation and scikit-learn's `KNeighborsClassifier` yields the same accuracy: 92% on the test dataset.
+
+***E.***
+
+```{python}
+k_range = range(1, 31)
+accuracies = []
+
+for k in k_range:
+    y_pred = knn_predict(X_train, y_train, X_test, k)
+    acc = accuracy_score(y_test, y_pred)
+    accuracies.append(acc * 100) 
+
+plt.figure(figsize=(10, 5))
+plt.plot(k_range, accuracies, marker='o')
+plt.title('KNN Accuracy vs k (Custom Implementation)')
+plt.xlabel('Number of Neighbors (k)')
+plt.ylabel('Accuracy (%)')
+plt.xticks(range(1, 31, 2))
+plt.grid(True)
+plt.show()
+
+best_k = k_range[np.argmax(accuracies)]
+best_accuracy = max(accuracies)
+(best_k, best_accuracy)
+```
+
+Here, we run the KNN implementation function with k=1,...,k=30, each time noting the percentage of correctly-classified points from the test dataset. Above is the plot of KNN accuracy (%) vs number of neighbors (k) for k = 1 to 30 using the customized KNN implementation. We found that:
+
+-   The optimal value of k is k=1, which gives the highest accuracy of 94% on the test dataset.
+
+    -   Although both k=1 and k=2 yield the same accuracy, k=1 is preferred here due to its better adaptation to local, nonlinear structure.
+
+-   Accuracy decreases as number of k increases, which aligns with this nonlinear, locally-sensitive boundary - small k values can better adapt to local shapes.
